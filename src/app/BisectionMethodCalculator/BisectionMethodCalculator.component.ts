@@ -14,35 +14,39 @@ import { InputTextModule } from 'primeng/inputtext';
     ButtonModule,
     InputNumberModule,
   ],
-  template: ` <div class="p-card">
-    <h1 class="p-card-title">Bisection Method Calculator</h1>
-    <div class="p-card-content">
-      <div class="p-field">
-        <label for="function" class="p-label">Function:</label>
-        <input
-          type="text"
-          id="function"
-          [(ngModel)]="function"
-          pInputText
-          placeholder="Enter the function"
-        />
+  template: `
+    <div class="p-card">
+      <h1 class="p-card-title">Bisection Method Calculator</h1>
+      <div class="p-card-content">
+        <div class="p-field">
+          <label for="function" class="p-label">Function:</label>
+          <input
+            type="text"
+            id="function"
+            [(ngModel)]="function"
+            pInputText
+            placeholder="Enter the function"
+          />
+        </div>
+        <div class="p-field">
+          <label for="a" class="p-label">Lower Bound (a):</label>
+          <p-inputNumber id="a" [(ngModel)]="a"></p-inputNumber>
+        </div>
+        <div class="p-field">
+          <label for="b" class="p-label">Upper Bound (b):</label>
+          <p-inputNumber id="b" [(ngModel)]="b"></p-inputNumber>
+        </div>
+        <div class="p-field">
+          <label for="tolerance" class="p-label">Tolerance:</label>
+          <p-inputNumber id="tolerance" [(ngModel)]="tolerance"></p-inputNumber>
+        </div>
+        <p-button label="Calculate Root" (onClick)="calculateRoot()"></p-button>
+        <p *ngIf="root !== undefined" class="p-mt-3">
+          Estimated Root: {{ root }}
+        </p>
       </div>
-      <div class="p-field">
-        <label for="a" class="p-label">Lower Bound (a):</label>
-        <p-inputNumber id="a" [(ngModel)]="a"></p-inputNumber>
-      </div>
-      <div class="p-field">
-        <label for="b" class="p-label">Upper Bound (b):</label>
-        <p-inputNumber id="b" [(ngModel)]="b"></p-inputNumber>
-      </div>
-      <div class="p-field">
-        <label for="tolerance" class="p-label">Tolerance:</label>
-        <p-inputNumber id="tolerance" [(ngModel)]="tolerance"></p-inputNumber>
-      </div>
-      <p-button label="Calculate Root" (onClick)="calculateRoot()"></p-button>
-      <p *ngIf="root" class="p-mt-3">Estimated Root: {{ root }}</p>
     </div>
-  </div>`,
+  `,
   styles: [
     `
       .p-card {
@@ -65,7 +69,9 @@ export class BisectionMethodCalculatorComponent {
 
   calculateRoot() {
     const evalFunction = (x: number) => {
-      return eval(this.function);
+      // Use a regular expression to replace 'x' with the value of x
+      const functionWithX = this.function.replace(/x/g, x.toString());
+      return eval(functionWithX);
     };
 
     let fa = evalFunction(this.a);
