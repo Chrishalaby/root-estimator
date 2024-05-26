@@ -4,6 +4,7 @@ import { TabViewModule } from 'primeng/tabview';
 import { BisectionMethodCalculatorComponent } from './BisectionMethodCalculator/BisectionMethodCalculator.component';
 import { FalsePositionCalculatorComponent } from './FalsePositionCalculator/FalsePositionCalculator.component';
 import { NewtonRaphsonCalculatorComponent } from './NewtonRaphsonCalculator/NewtonRaphsonCalculator.component';
+import { SecantMethodCalculatorComponent } from './SecantMethodCalculator/SecantMethodCalculator.component';
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -14,6 +15,7 @@ import { NewtonRaphsonCalculatorComponent } from './NewtonRaphsonCalculator/Newt
     NewtonRaphsonCalculatorComponent,
     BisectionMethodCalculatorComponent,
     FalsePositionCalculatorComponent,
+    SecantMethodCalculatorComponent,
   ],
 })
 export class AppComponent {
