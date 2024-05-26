@@ -1,10 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+} from '@angular/forms';
+import { derivative, evaluate } from 'mathjs';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
-
+import { TableModule } from 'primeng/table';
 @Component({
   selector: 'app-newton-raphson-calculator',
   standalone: true,
@@ -15,126 +21,166 @@ import { InputTextModule } from 'primeng/inputtext';
     InputNumberModule,
     ButtonModule,
     ReactiveFormsModule,
+    TableModule,
   ],
   template: `
-    <div>
+    <div [formGroup]="form" class="flex flex-column">
       <h2>Newton-Raphson Root Calculator</h2>
-      <span class="p-float-label">
+      <span class="flex flex-column">
+        <label for="functionString">Function</label>
         <input
           pInputText
           id="functionString"
-          [(ngModel)]="functionString"
+          formControlName="functionString"
           name="functionString"
         />
-        <label for="functionString">Function</label>
       </span>
-      <span class="p-float-label" style="margin-top: 1.7rem;">
+      <span class="flex flex-column" style="margin-top: 1.7rem;">
+        <label for="derivativeString">Derivative</label>
         <input
           pInputText
           id="derivativeString"
-          [(ngModel)]="derivativeString"
+          formControlName="derivativeString"
           name="derivativeString"
         />
-        <label for="derivativeString">Derivative</label>
       </span>
-      <span class="p-float-label" style="margin-top: 1.7rem;">
+      <span class="flex flex-column" style="margin-top: 1.7rem;">
+        <label for="initialGuess">Initial Guess</label>
         <input
           pInputText
           id="initialGuess"
-          [(ngModel)]="initialGuess"
+          formControlName="initialGuess"
           name="initialGuess"
         />
-        <label for="initialGuess">Initial Guess</label>
-      </span>
-      <span class="p-float-label" style="margin-top: 1.7rem;">
-        <input
-          pInputText
-          id="tolerance"
-          [(ngModel)]="tolerance"
-          name="tolerance"
-        />
-        <label for="tolerance">Fault Tolerance</label>
       </span>
       <span
-        class="p-float-label"
+        class="flex flex-column"
         style="margin-top: 1.7rem; margin-bottom:1.7rem"
       >
+        <label>Iteration Amount</label>
         <p-inputNumber
-          [(ngModel)]="maxIterations"
+          formControlName="numberOfIterations"
           [min]="1"
           [max]="1000"
         ></p-inputNumber>
-        <label>Iteration Amount</label>
       </span>
       <p-button label="Calculate Root" (onClick)="calculateRoot()"></p-button>
-      <div *ngIf="result !== null">
-        <p>Calculated Root: {{ result }}</p>
-      </div>
-      <div *ngIf="logs.length">
-        <h3>Calculation Steps:</h3>
-        <ul>
-          <li *ngFor="let log of logs">{{ log }}</li>
-        </ul>
-      </div>
+      @if (result !== null){
+      <p>Calculated Root: {{ result }}</p>
+      } @if (iterationData.length){
+      <p-table [value]="iterationData">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Iteration</th>
+            <th>xi</th>
+            <th>f(xi)</th>
+            <th>f'(xi)</th>
+            <th>xi + 1</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-data>
+          <tr>
+            <td>{{ data.iteration }}</td>
+            <td>{{ data.xi }}</td>
+            <td>{{ data.fxi }}</td>
+            <td>{{ data.fpxi }}</td>
+            <td>{{ data.xiPlus1 }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+      }
+      <!-- @if (logs.length){
+      <h3>Calculation Steps:</h3>
+      <ul>
+        <li *ngFor="let log of logs">{{ log }}</li>
+      </ul>
+      } -->
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NewtonRaphsonCalculatorComponent {
+export class NewtonRaphsonCalculatorComponent implements OnInit {
   result: number | null = null;
-  functionString: string = 'x^3 - x - 1'; // Example function
-  derivativeString: string = '3*x^2 - 1'; // Example derivative
-  initialGuess: number = 1.5; // Adjusted initial guess closer to the actual root
-  tolerance: number = 0.0001;
-  maxIterations: number = 1000;
-  logs: string[] = []; // To store calculation steps
+  // logs: string[] = [];
+  iterationData: any[] = [];
+  form!: FormGroup;
 
-  constructor() {}
+  constructor(private readonly formBuilder: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.form = this.formBuilder.group({
+      functionString: 'x^3 - x - 1',
+      derivativeString: '3*x^2 - 1',
+      initialGuess: 1.5,
+      numberOfIterations: 1000,
+    });
+
+    this.form.get('functionString')?.valueChanges.subscribe((value) => {
+      this.getDerivative(value);
+    });
+  }
+
+  getDerivative(value: string) {
+    try {
+      const derivativeFunction = derivative(value, 'x');
+      this.form
+        .get('derivativeString')
+        ?.setValue(derivativeFunction.toString());
+    } catch (error) {
+      console.error('Error calculating derivative:', error);
+    }
+  }
 
   calculateRoot() {
-    const f = this.parseFunction(this.functionString);
-    const fPrime = this.parseFunction(this.derivativeString);
+    const functionString = this.form.get('functionString')?.value;
+    const derivativeString = this.form.get('derivativeString')?.value;
+    const initialGuess = this.form.get('initialGuess')?.value;
+    const maxIterations = this.form.get('numberOfIterations')?.value;
 
-    let x = this.initialGuess; // Initial guess
-    this.logs = [`Starting calculation with initial guess: ${x}`];
+    const f = (x: number) => evaluate(functionString, { x });
+    const fPrime = (x: number) => evaluate(derivativeString, { x });
 
-    for (let i = 0; i < this.maxIterations; i++) {
-      let fX = f(x);
-      let fPrimeX = fPrime(x);
+    let x = initialGuess;
+    // this.logs = [`Starting calculation with initial guess: ${x}`];
+    this.iterationData = [];
 
-      // Check if the derivative is extremely small (close to zero)
-      if (Math.abs(fPrimeX) < 1e-10) {
-        this.logs.push(
-          `Iteration ${
-            i + 1
-          }: Derivative near zero at x = ${x}, might cause numerical instability.`
-        );
-        break;
-      }
+    for (let i = 0; i < maxIterations; i++) {
+      const fX = f(x);
+      const fPrimeX = fPrime(x);
 
-      let nextX = x - fX / fPrimeX;
-      this.logs.push(`Iteration ${i + 1}: x = ${nextX}`);
+      // if (Math.abs(fPrimeX) < 1e-10) {
+      //   this.logs.push(
+      //     `Iteration ${
+      //       i + 1
+      //     }: Derivative near zero at x = ${x}, might cause numerical instability.`
+      //   );
+      //   break;
+      // }
 
-      // Check for convergence
-      if (Math.abs(nextX - x) < this.tolerance) {
-        this.logs.push(`Root found at ${nextX} after ${i + 1} iterations`);
+      const nextX = x - fX / fPrimeX;
+      this.iterationData.push({
+        iteration: i + 1,
+        xi: x,
+        fxi: fX,
+        fpxi: fPrimeX,
+        xiPlus1: nextX,
+      });
+
+      // this.logs.push(`Iteration ${i + 1}: x = ${nextX}`);
+
+      if (Math.abs(nextX - x) < 1e-10) {
+        // this.logs.push(`Root found at ${nextX} after ${i + 1} iterations`);
         this.result = nextX;
         break;
       }
 
-      x = nextX; // Update x for the next iteration
+      x = nextX;
     }
 
-    if (this.result === null) {
-      this.logs.push(
-        `No root found within the tolerance of ${this.tolerance} after ${this.maxIterations} iterations.`
-      );
-    }
-  }
-
-  private parseFunction(func: string): (x: number) => number {
-    return (x: number) => {
-      return eval(func.replace(/x/g, x.toString()));
-    };
+    // if (this.result === null) {
+    //   this.logs.push(
+    //     `No root found within the tolerance after ${maxIterations} iterations.`
+    //   );
+    // }
   }
 }
