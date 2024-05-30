@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { evaluate } from 'mathjs';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
@@ -22,10 +23,15 @@ import { TableModule } from 'primeng/table';
     InputNumberModule,
     ReactiveFormsModule,
     TableModule,
+    DialogModule,
   ],
   template: `
     <div class="p-card" [formGroup]="form">
-      <h1 class="p-card-title">Bisection Method Calculator</h1>
+      <div class="flex flex-row justify-content-between">
+        <h1 class="p-card-title">Bisection Method Calculator</h1>
+
+        <p-button (click)="showDialog()" label="Learn How" />
+      </div>
       <div class="p-card-content">
         <div class="flex flex-column mt-2">
           <label for="function" class="p-label">Function</label>
@@ -88,12 +94,29 @@ import { TableModule } from 'primeng/table';
         }
       </div>
     </div>
+    <p-dialog
+      [modal]="true"
+      header="Learn The Method"
+      [(visible)]="dialogVisible"
+    >
+      <div class="flex flex-column gap-4">
+        <img src="assets/bisection.jpeg" alt="Bisection" />
+
+        <video controls preload="auto">
+          <source src="assets/bisection.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </p-dialog>
   `,
   styles: [
     `
       .p-card {
-        margin: 20px;
-        padding: 20px;
+        background: #ffffff;
+        border: 1px solid #dfe7ef;
+        padding: 2rem;
+        box-shadow: 0px 4px 30px rgba(173, 179, 238, 0.54);
+        border-radius: 12px;
       }
       .p-field {
         margin-bottom: 10px;
@@ -106,6 +129,8 @@ export class BisectionMethodCalculatorComponent implements OnInit {
   root: number | undefined;
   form!: FormGroup;
   iterationData: any[] = [];
+
+  dialogVisible = false;
 
   constructor(private readonly formBuilder: FormBuilder) {}
 
@@ -156,5 +181,9 @@ export class BisectionMethodCalculatorComponent implements OnInit {
 
       this.root = xr;
     }
+  }
+
+  showDialog() {
+    this.dialogVisible = true;
   }
 }

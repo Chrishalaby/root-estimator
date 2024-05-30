@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { evaluate } from 'mathjs';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
@@ -23,75 +24,111 @@ import { TableModule } from 'primeng/table';
     InputNumberModule,
     ReactiveFormsModule,
     TableModule,
+    DialogModule,
   ],
   template: `<div class="p-card" [formGroup]="form">
-    <h1 class="p-card-title">False Position Method Calculator</h1>
-    <div class="p-card-content">
-      <div class="flex flex-column mt-2">
-        <label for="function" class="p-label">Function:</label>
-        <input
-          type="text"
-          id="function"
-          formControlName="function"
-          pInputText
-          placeholder="Enter the function"
-        />
+      <div class="flex flex-row justify-content-between">
+        <h1 class="p-card-title">False Position Method Calculator</h1>
+
+        <p-button (click)="showDialog()" label="Learn How" />
       </div>
-      <div class="flex flex-column mt-2">
-        <label for="xu" class="p-label">Lower Bound (xu):</label>
-        <p-inputNumber id="xu" formControlName="xu"></p-inputNumber>
+      <div class="p-card-content">
+        <div class="flex flex-column mt-2">
+          <label for="function" class="p-label">Function:</label>
+          <input
+            type="text"
+            id="function"
+            formControlName="function"
+            pInputText
+            placeholder="Enter the function"
+          />
+        </div>
+        <div class="flex flex-column mt-2">
+          <label for="xu" class="p-label">Lower Bound (xu):</label>
+          <p-inputNumber id="xu" formControlName="xu"></p-inputNumber>
+        </div>
+        <div class="flex flex-column mt-2">
+          <label for="xl" class="p-label">Upper Bound (xl):</label>
+          <p-inputNumber id="xl" formControlName="xl"></p-inputNumber>
+        </div>
+        <div class="flex flex-column mt-2">
+          <label for="tolerance" class="p-label">Number Of Iterations</label>
+          <p-inputNumber
+            id="tolerance"
+            formControlName="numberOfIterations"
+          ></p-inputNumber>
+        </div>
+        <p-button
+          label="Calculate Root"
+          class="mt-2"
+          (onClick)="calculateRoot()"
+        ></p-button>
+        <p *ngIf="root !== undefined" class="p-mt-3">
+          Estimated Root: {{ root }}
+        </p>
+        <p-table *ngIf="iterationData.length" [value]="iterationData">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Iteration</th>
+              <th>xl</th>
+              <th>f(xl)</th>
+              <th>xu</th>
+              <th>f(xu)</th>
+              <th>xr</th>
+              <th>f(xr)</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-data>
+            <tr>
+              <td>{{ data.iteration }}</td>
+              <td>{{ data.xl }}</td>
+              <td>{{ data.fxl }}</td>
+              <td>{{ data.xu }}</td>
+              <td>{{ data.fxu }}</td>
+              <td>{{ data.xr }}</td>
+              <td>{{ data.fxr }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
       </div>
-      <div class="flex flex-column mt-2">
-        <label for="xl" class="p-label">Upper Bound (xl):</label>
-        <p-inputNumber id="xl" formControlName="xl"></p-inputNumber>
-      </div>
-      <div class="flex flex-column mt-2">
-        <label for="tolerance" class="p-label">Number Of Iterations</label>
-        <p-inputNumber
-          id="tolerance"
-          formControlName="numberOfIterations"
-        ></p-inputNumber>
-      </div>
-      <p-button
-        label="Calculate Root"
-        class="mt-2"
-        (onClick)="calculateRoot()"
-      ></p-button>
-      <p *ngIf="root !== undefined" class="p-mt-3">
-        Estimated Root: {{ root }}
-      </p>
-      <p-table *ngIf="iterationData.length" [value]="iterationData">
-        <ng-template pTemplate="header">
-          <tr>
-            <th>Iteration</th>
-            <th>xl</th>
-            <th>f(xl)</th>
-            <th>xu</th>
-            <th>f(xu)</th>
-            <th>xr</th>
-            <th>f(xr)</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-data>
-          <tr>
-            <td>{{ data.iteration }}</td>
-            <td>{{ data.xl }}</td>
-            <td>{{ data.fxl }}</td>
-            <td>{{ data.xu }}</td>
-            <td>{{ data.fxu }}</td>
-            <td>{{ data.xr }}</td>
-            <td>{{ data.fxr }}</td>
-          </tr>
-        </ng-template>
-      </p-table>
     </div>
-  </div> `,
+
+    <p-dialog
+      [modal]="true"
+      header="Learn The Method"
+      [(visible)]="dialogVisible"
+    >
+      <div class="flex flex-column gap-4">
+        <img src="assets/false-position.jpeg" alt="False Position" />
+
+        <video controls preload="auto">
+          <source src="assets/false-position.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </p-dialog> `,
+  styles: [
+    `
+      .p-card {
+        background: #ffffff;
+        border: 1px solid #dfe7ef;
+        padding: 2rem;
+        box-shadow: 0px 4px 30px rgba(173, 179, 238, 0.54);
+        border-radius: 12px;
+      }
+      .p-field {
+        margin-bottom: 10px;
+      }
+    `,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FalsePositionCalculatorComponent {
   root: number | undefined;
   form!: FormGroup;
   iterationData: any[] = [];
+
+  dialogVisible = false;
 
   constructor(private readonly formBuilder: FormBuilder) {}
 
@@ -143,5 +180,9 @@ export class FalsePositionCalculatorComponent {
 
       this.root = xr;
     }
+  }
+
+  showDialog() {
+    this.dialogVisible = true;
   }
 }

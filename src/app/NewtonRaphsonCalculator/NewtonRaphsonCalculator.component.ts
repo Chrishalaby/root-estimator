@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { derivative, evaluate } from 'mathjs';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
@@ -22,10 +23,15 @@ import { TableModule } from 'primeng/table';
     ButtonModule,
     ReactiveFormsModule,
     TableModule,
+    DialogModule,
   ],
   template: `
-    <div [formGroup]="form" class="flex flex-column">
-      <h2>Newton-Raphson Root Calculator</h2>
+    <div [formGroup]="form" class="p-card flex flex-column">
+      <div class="flex flex-row justify-content-between">
+        <h1 class="p-card-title">Newton-Raphson Root Calculator</h1>
+
+        <p-button (click)="showDialog()" label="Learn How" />
+      </div>
       <span class="flex flex-column">
         <label for="functionString">Function</label>
         <input
@@ -96,7 +102,36 @@ import { TableModule } from 'primeng/table';
       </ul>
       } -->
     </div>
+
+    <p-dialog
+      [modal]="true"
+      header="Learn The Method"
+      [(visible)]="dialogVisible"
+    >
+      <div class="flex flex-column gap-4">
+        <img src="assets/newton.jpeg" alt="newton" />
+
+        <video controls preload="auto">
+          <source src="assets/newton.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </p-dialog>
   `,
+  styles: [
+    `
+      .p-card {
+        background: #ffffff;
+        border: 1px solid #dfe7ef;
+        padding: 2rem;
+        box-shadow: 0px 4px 30px rgba(173, 179, 238, 0.54);
+        border-radius: 12px;
+      }
+      .p-field {
+        margin-bottom: 10px;
+      }
+    `,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NewtonRaphsonCalculatorComponent implements OnInit {
@@ -104,6 +139,8 @@ export class NewtonRaphsonCalculatorComponent implements OnInit {
   // logs: string[] = [];
   iterationData: any[] = [];
   form!: FormGroup;
+
+  dialogVisible = false;
 
   constructor(private readonly formBuilder: FormBuilder) {}
 
@@ -182,5 +219,9 @@ export class NewtonRaphsonCalculatorComponent implements OnInit {
     //     `No root found within the tolerance after ${maxIterations} iterations.`
     //   );
     // }
+  }
+
+  showDialog() {
+    this.dialogVisible = true;
   }
 }

@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { evaluate } from 'mathjs';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
@@ -23,77 +24,113 @@ import { TableModule } from 'primeng/table';
     InputNumberModule,
     ReactiveFormsModule,
     TableModule,
+    DialogModule,
   ],
   template: `<div class="p-card" [formGroup]="form">
-    <h1 class="p-card-title">Secant Method Calculator</h1>
-    <div class="p-card-content">
-      <div class="flex flex-column mt-2">
-        <label for="function" class="p-label">Function:</label>
-        <input
-          type="text"
-          id="function"
-          formControlName="function"
-          pInputText
-          placeholder="Enter the function"
-        />
+      <div class="flex flex-row justify-content-between">
+        <h1 class="p-card-title">Secant Method Calculator</h1>
+
+        <p-button (click)="showDialog()" label="Learn How" />
       </div>
-      <div class="flex flex-column mt-2">
-        <label for="x0" class="p-label">Initial Guess x0:</label>
-        <p-inputNumber id="x0" formControlName="x0"></p-inputNumber>
+      <div class="p-card-content">
+        <div class="flex flex-column mt-2">
+          <label for="function" class="p-label">Function:</label>
+          <input
+            type="text"
+            id="function"
+            formControlName="function"
+            pInputText
+            placeholder="Enter the function"
+          />
+        </div>
+        <div class="flex flex-column mt-2">
+          <label for="x0" class="p-label">Initial Guess x0:</label>
+          <p-inputNumber id="x0" formControlName="x0"></p-inputNumber>
+        </div>
+        <div class="flex flex-column mt-2">
+          <label for="x1" class="p-label">Initial Guess x1:</label>
+          <p-inputNumber id="x1" formControlName="x1"></p-inputNumber>
+        </div>
+        <div class="flex flex-column mt-2">
+          <label for="numberOfIterations" class="p-label"
+            >Number Of Iterations</label
+          >
+          <p-inputNumber
+            id="numberOfIterations"
+            formControlName="numberOfIterations"
+          ></p-inputNumber>
+        </div>
+        <p-button
+          label="Calculate Root"
+          class="mt-2"
+          (onClick)="calculateRoot()"
+        ></p-button>
+        <p *ngIf="root !== undefined" class="p-mt-3">
+          Estimated Root: {{ root }}
+        </p>
+        <p-table *ngIf="iterationData.length" [value]="iterationData">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Iteration</th>
+              <th>x0</th>
+              <th>f(x0)</th>
+              <th>x1</th>
+              <th>f(x1)</th>
+              <th>x2</th>
+              <th>f(x2)</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-data>
+            <tr>
+              <td>{{ data.iteration }}</td>
+              <td>{{ data.x0 }}</td>
+              <td>{{ data.fx0 }}</td>
+              <td>{{ data.x1 }}</td>
+              <td>{{ data.fx1 }}</td>
+              <td>{{ data.x2 }}</td>
+              <td>{{ data.fx2 }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
       </div>
-      <div class="flex flex-column mt-2">
-        <label for="x1" class="p-label">Initial Guess x1:</label>
-        <p-inputNumber id="x1" formControlName="x1"></p-inputNumber>
-      </div>
-      <div class="flex flex-column mt-2">
-        <label for="numberOfIterations" class="p-label"
-          >Number Of Iterations</label
-        >
-        <p-inputNumber
-          id="numberOfIterations"
-          formControlName="numberOfIterations"
-        ></p-inputNumber>
-      </div>
-      <p-button
-        label="Calculate Root"
-        class="mt-2"
-        (onClick)="calculateRoot()"
-      ></p-button>
-      <p *ngIf="root !== undefined" class="p-mt-3">
-        Estimated Root: {{ root }}
-      </p>
-      <p-table *ngIf="iterationData.length" [value]="iterationData">
-        <ng-template pTemplate="header">
-          <tr>
-            <th>Iteration</th>
-            <th>x0</th>
-            <th>f(x0)</th>
-            <th>x1</th>
-            <th>f(x1)</th>
-            <th>x2</th>
-            <th>f(x2)</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-data>
-          <tr>
-            <td>{{ data.iteration }}</td>
-            <td>{{ data.x0 }}</td>
-            <td>{{ data.fx0 }}</td>
-            <td>{{ data.x1 }}</td>
-            <td>{{ data.fx1 }}</td>
-            <td>{{ data.x2 }}</td>
-            <td>{{ data.fx2 }}</td>
-          </tr>
-        </ng-template>
-      </p-table>
     </div>
-  </div> `,
+
+    <p-dialog
+      [modal]="true"
+      header="Learn The Method"
+      [(visible)]="dialogVisible"
+    >
+      <div class="flex flex-column gap-4">
+        <img src="assets/secant.jpeg" alt="secant" />
+
+        <video controls preload="auto">
+          <source src="assets/secant.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </p-dialog> `,
+  styles: [
+    `
+      .p-card {
+        background: #ffffff;
+        border: 1px solid #dfe7ef;
+        padding: 2rem;
+        box-shadow: 0px 4px 30px rgba(173, 179, 238, 0.54);
+        border-radius: 12px;
+      }
+      .p-field {
+        margin-bottom: 10px;
+      }
+    `,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SecantMethodCalculatorComponent implements OnInit {
   root: number | undefined;
   form!: FormGroup;
   iterationData: any[] = [];
+
+  dialogVisible = false;
 
   constructor(private readonly formBuilder: FormBuilder) {}
 
@@ -144,5 +181,9 @@ export class SecantMethodCalculatorComponent implements OnInit {
 
       this.root = x2;
     }
+  }
+
+  showDialog() {
+    this.dialogVisible = true;
   }
 }
